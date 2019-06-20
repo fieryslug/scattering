@@ -26,7 +26,18 @@ KK = np.concatenate(([k0], K))
 
 
 tmp_fl = [] #for testing
+NUL = 104548791234
 
+#prints current params
+def printparams():
+    print('=========PARAMS=========')
+    print('-physical constants/params:')
+    print('hbar = {} \nk0   = {} \nm    = {} \n'.format(hbar, k0, m))
+    print('-quadrature params:')
+    print('QUAD = {} \nDEG  = {} \nC    = {}'.format(QUAD, DEG, CC))
+
+def summary(dlm = ' '):
+    return ('hbar={}{}k0={}{}m={}'.format(hbar, dlm, k0, dlm, m) + '; ' + 'QUAD={}{}DEG={}{}C={}'.format(QUAD, dlm, DEG, dlm, CC))
 
 #sets scattering parameters
 def setparams(hbar1=hbar, k01=k0, m1=m):
@@ -52,7 +63,6 @@ def setquadparams(deg=DEG, c=CC):
         W = CC * np.exp(X1) * W1
         KK = np.concatenate(([k0], K))
 
-
 def setquadrature(quad=QUAD):
     global QUAD, CC, X1, W1, K, W, KK
     assert quad in ['leg', 'lag', 'herm']
@@ -68,8 +78,8 @@ def setquadrature(quad=QUAD):
         K = CC * X1
         W = CC * np.exp(X1) * W1
         KK = np.concatenate(([k0], K))
-    if quad == 'herm':
-        return
+    if quad == 'mixed':
+        pass 
 
 #finite legendre quadrature 
 def leg_quad(f, a, b, deg=DEG):
@@ -99,7 +109,7 @@ def V_l(V, l):
     for j in range(n):
         tmp = []
         for i in range(n):
-            print('({}, {})'.format(KK[i], KK[j]))
+            #print('({}, {})'.format(KK[i], KK[j]))
             Vji = leg_quad_halfinf(lambda r: r**2 * jl(l, KK[i]*r) * V(r) * jl(l, KK[j]*r))
             tmp.append( Vji)
         res.append(tmp)
@@ -112,7 +122,7 @@ def V_l_box(V, l, r0):
     for j in range(n):
         tmp = []
         for i in range(n):
-            print('({}, {})'.format(KK[i], KK[j]))
+            #print('({}, {})'.format(KK[i], KK[j]))
             Vji = leg_quad(lambda r: r**2 * jl(l, KK[i]*r) * V(r) * jl(l, KK[j]*r), 0, r0)
             tmp.append(Vji)
         res.append(tmp)

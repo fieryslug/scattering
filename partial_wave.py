@@ -56,4 +56,52 @@ class box:
         #return lambda theta: (1/k0) * sum([special.legendre(l)(np.cos(theta)) * (2*l+1) * self.f[l] for l in range(maxl+1)])    
 
 
+class general:
+    def __init__(self, hbar, k0, m, V, r0):
+        self.k0 = k0
+        self.hbar = 1
+        self.m = m
+        self.V = V
+        self.r0 = r0
+        self.U = lambda r: (2*self.m*self.V(r) / self.hbar**2)
+        self.f = []
+    #logarithmic derivative
+    def L(self, l, dr=0.001):
+        r = 0
+        u = 0
+        u_ = 0.01
+        u__ = 0
+        if l == 0:
+            u_ = 1
+        while r <= self.r0:
+            if abs(r) <= 1e-4:
+                u__ = 0
+            else:
+                u__ = (self.U(r) + l*(l+1)/r**2 - self.k0**2) * u
+            u_ += u__ * dr
+            u += u_ * dr
+            r += dr
+            print('u={}, u_={}'.format(u, u_))
+        return u_ / u
 
+    def partial_f(self, l):
+        Lg = self.L(l)
+        k = self.k0
+        R = self.r0
+        tandeltal = (jl(l, k*R) + k*R*jl(l, k*R, True) - R*jl(l, k*R)*Lg) / (nl(l, k*R) + k*R*nl(l, k*R, True) - R*nl(l, k*R)*Lg)
+        deltal = np.arctan(tandeltal)
+        return np.exp(1j*deltal) * np.sin(deltal)
+
+    def compute_f(self, maxl):
+        self.f = []
+        for l in range(0, maxl+1):
+            self.f.append(self.partial_f(l))
+
+    def amplitude_f(self, maxl):
+        self.compute_f(maxl)
+        def f(theta):
+            S = 0
+            for l in range(maxl+1):
+                S += special.legendre(l)(np.cos(theta)) * (2*l+1) * self.f[l] / self.k0
+            return S
+        return f
