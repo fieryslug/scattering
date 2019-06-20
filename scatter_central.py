@@ -8,21 +8,25 @@ from matplotlib import pyplot as plt
 hbar = 1
 k0 = 1
 m = 1
+
+#math things
 Pi = np.pi
 e = np.e
+jl = special.spherical_jn
+nl = special.spherical_yn
 
 #legendre quad. const
+QUAD = 'leg' #indicator
 DEG = 40
-CC = 10
-
+CC = 1
 X1, W1 = np.polynomial.legendre.leggauss(DEG)
 K = (1+X1)/(1-X1) * CC
 W = 2*CC*W1 / (1-X1)**2
-
 KK = np.concatenate(([k0], K))
 
 
 tmp_fl = [] #for testing
+
 
 #sets scattering parameters
 def setparams(hbar1=hbar, k01=k0, m1=m):
@@ -33,15 +37,41 @@ def setparams(hbar1=hbar, k01=k0, m1=m):
     KK = np.concatenate(([k0], K))
 
 def setquadparams(deg=DEG, c=CC):
-    global DEG, CC, X1, W1, K, W, KK
+    global QUAD, DEG, CC, X1, W1, K, W, KK
     DEG = deg
     CC = c
-    X1, W1 = np.polynomial.legendre.leggauss(DEG)
-    K = (1+X1)/(1-X1) * CC
-    W = 2*CC*W1 / (1-X1)**2
-    KK = np.concatenate(([k0], K))
+    if QUAD == 'leg':
+        X1, W1 = np.polynomial.legendre.leggauss(DEG)
+        K = (1+X1)/(1-X1) * CC
+        W = 2*CC*W1 / (1-X1)**2
+        KK = np.concatenate(([k0], K))
+    if QUAD == 'lag':
+        QUAD = 'lag'
+        X1, W1 = np.polynomial.laguerre.laggauss(DEG)
+        K = CC * X1
+        W = CC * np.exp(X1) * W1
+        KK = np.concatenate(([k0], K))
 
-#legendre quadrature 
+
+def setquadrature(quad=QUAD):
+    global QUAD, CC, X1, W1, K, W, KK
+    assert quad in ['leg', 'lag', 'herm']
+    if quad == 'leg':
+        QUAD = 'leg'
+        X1, W1 = np.polynomial.legendre.leggauss(DEG)
+        K = (1+X1)/(1-X1) * CC
+        W = 2*CC*W1 / (1-X1)**2
+        KK = np.concatenate(([k0], K))
+    if quad == 'lag':
+        QUAD = 'lag'
+        X1, W1 = np.polynomial.laguerre.laggauss(DEG)
+        K = CC * X1
+        W = CC * np.exp(X1) * W1
+        KK = np.concatenate(([k0], K))
+    if quad == 'herm':
+        return
+
+#finite legendre quadrature 
 def leg_quad(f, a, b, deg=DEG):
     X, W = np.polynomial.legendre.leggauss(deg)
     s = 0
@@ -52,34 +82,39 @@ def leg_quad(f, a, b, deg=DEG):
         s += W[i] * f(A + B*X[i])
     return B * s
 
-#legendre quadrature for (0, inf)
-def leg_quad_halfinf(f, deg=DEG, C=CC):
-    X1, W1 = np.polynomial.legendre.leggauss(deg)
-    K = (1+X1)/(1-X1) * C
-    W = 2 * C * W1 / (1-X1)**2
+#quadrature for (0, inf)
+def leg_quad_halfinf(f):
+    #print('DEG={}, C={}, QUAD={}'.format(DEG, CC, QUAD))
     s = 0
-    for i in range(deg):
+    for i in range(DEG):
         s += W[i] * f(K[i])
-
     return s
 
 #V_l[j][i], O(n^3)
-def V_l(V, l, deg=DEG, C=CC):
-    X1, W1 = np.polynomial.legendre.leggauss(deg)
-    K = (1+X1)/(1-X1) * C
-    W = 2 * C * W1 / (1-X1)**2
-    KK = np.concatenate(([k0], K))
-    
+def V_l(V, l):
     res = []
-    #jl = lambda u: special.spherical_jn(l, u)
     jl = special.spherical_jn
     n = len(KK)
-
+    print('in Vl: {}'.format(n))
     for j in range(n):
         tmp = []
         for i in range(n):
+            print('({}, {})'.format(KK[i], KK[j]))
             Vji = leg_quad_halfinf(lambda r: r**2 * jl(l, KK[i]*r) * V(r) * jl(l, KK[j]*r))
             tmp.append( Vji)
+        res.append(tmp)
+    return np.array(res)
+
+def V_l_box(V, l, r0):
+    print('invoked; r0={}'.format(r0))
+    res = []
+    n = len(KK)
+    for j in range(n):
+        tmp = []
+        for i in range(n):
+            print('({}, {})'.format(KK[i], KK[j]))
+            Vji = leg_quad(lambda r: r**2 * jl(l, KK[i]*r) * V(r) * jl(l, KK[j]*r), 0, r0)
+            tmp.append(Vji)
         res.append(tmp)
     return np.array(res)
 
@@ -101,28 +136,34 @@ def D_l(Vl, deg=DEG, C=CC):
     return np.array(res)
 
 #T_l's up to l=maxl, O(l*n^3)
-def T_conj(V, maxl):
+def T_conj(V, maxl, isbox=False, r0=0):
+    assert not ((isbox and r0==0) or ((not isbox) and r0 != 0))
     global tmp_fl
     R = []
     tmp_fl = []
     for l in range(0, maxl+1):
         print('l={}'.format(l))
         Vl = V_l(V, l)
+        if isbox:
+            Vl = V_l_box(V, l, r0)
         Ul = Vl[:, 0]
         Dl = D_l(Vl)
+        print('Ul {}'.format(Ul.shape))
+        print('Dl {}'.format(Dl.shape))
+        print('Vl {}'.format(Vl.shape))
         Tl = np.matmul(np.linalg.inv(I(len(Ul))-Dl), Ul)  #inv O(n^3)
         R.append(Tl)
         tmp_fl.append(-(2*m*k0)/(hbar**2)*Tl[0])
     return np.array(R)
 
 #scattering amplitude approx. up to l=maxl, O(l*n^3)
-def amplitude_f(V, maxl):
-    Tconj = T_conj(V, maxl)
+def amplitude_f(V, maxl, isbox=False, r0=0):
+    Tconj = T_conj(V, maxl, isbox, r0)
     return lambda theta: (-4*Pi**2*m/(hbar**2) * 1/(2*Pi**2) * sum([(2*l+1)*Tconj[l][0] * special.legendre(l)(np.cos(theta)) for l in range(maxl+1)]))
 
 #update; testing
-def amplitude_f_2(V, maxl):
-    Tconj = T_conj(V, maxl)
+def amplitude_f_2(V, maxl, isbox=False, r0=0):
+    Tconj = T_conj(V, maxl, isbox, r0)
     def f(theta):
         S = 0
         for l in range(maxl+1):
