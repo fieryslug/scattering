@@ -57,8 +57,8 @@ class box:
 
 
 class general:
-    def __init__(self, hbar, k0, m, V, r0):
-        self.k0 = k0
+    def __init__(self, hbar, k01, m, V, r0):
+        self.k0 = k01
         self.hbar = 1
         self.m = m
         self.V = V
@@ -81,7 +81,7 @@ class general:
             u_ += u__ * dr
             u += u_ * dr
             r += dr
-            print('u={}, u_={}'.format(u, u_))
+            #print('u={}, u_={}'.format(u, u_))
         return u_ / u
 
     def partial_f(self, l):

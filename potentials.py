@@ -1,8 +1,5 @@
 import numpy as np
 
-
-
-
 def yukawa(g, a):
     def V(r):
         return g * (np.exp(-a*r) / (r))
@@ -18,12 +15,22 @@ def bump(g, a):
         return g * np.exp(-(a*r)**2)
     return V
 
-def wavelike(g, a):
+def wavelike(g, a, b):
     def V(r):
-        return g * np.sin(a*r)**2 / (a*r)**2
-    return V
+        if abs(r) <= 1e-4:
+            return g * a**2 / b**2
+        else:
+            return g * np.sin(a*r)**2 / (b*r)**2
+    return np.vectorize(V, otypes=[float])
 
 def wavelike2(g, a, b):
     def V(r):
         return g * np.cos(a*r) * np.exp(-(b*r)**2)
+    return V
+
+def ring(g, a, c):
+    q = 10
+    def V(r):
+        return g * np.tanh(q*r) * np.exp(-((r-c)/a)**2)
+
     return V

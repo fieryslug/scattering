@@ -19,7 +19,6 @@ nl = special.spherical_yn
 QUAD = 'leg' #indicator
 DEG = 40
 CC = 1
-
 X1, W1 = np.polynomial.legendre.leggauss(DEG)
 K = (1+X1)/(1-X1) * CC
 W = 2*CC*W1 / (1-X1)**2
@@ -34,9 +33,11 @@ NUL = 104548791234
 
 #prints current params
 def printparams():
-    print('\n========================PARAMS========================')
-    print(summary())
-    print('========================PARAMS========================\n')
+    print('=========PARAMS=========')
+    print('-physical constants/params:')
+    print('hbar = {} \nk0   = {} \nm    = {} \n'.format(hbar, k0, m))
+    print('-quadrature params:')
+    print('QUAD = {} \nDEG  = {} \nC    = {}'.format(QUAD, DEG, CC))
 
 def summary(dlm = ' '):
     return ('hbar={}{}k0={}{}m={}'.format(hbar, dlm, k0, dlm, m) + '; ' + 'QUAD={}{}DEG={}{}C={}{}DEG2={}{}R0={}'.format(QUAD, dlm, DEG, dlm, CC, dlm, DEG2, dlm, R0))
@@ -50,17 +51,26 @@ def setparams(hbar1=hbar, k01=k0, m1=m):
     m = m1
     KK = np.concatenate(([k0], K))
     applychange()
-    printparams()
 
 def setquadparams(deg=DEG, c=CC, deg2=DEG2, r0=R0):
-    global QUAD, DEG, CC, X1, W1, K, W, KK, DEG2, R0
+    global QUAD, DEG, CC, X1, W1, K, W, KK
     DEG = deg
     CC = c
     DEG2 = deg2
     R0 = r0
     setquadrature(quad=QUAD)
+    if QUAD == 'leg':
+        X1, W1 = np.polynomial.legendre.leggauss(DEG)
+        K = (1+X1)/(1-X1) * CC
+        W = 2*CC*W1 / (1-X1)**2
+        KK = np.concatenate(([k0], K))
+    if QUAD == 'lag':
+        QUAD = 'lag'
+        X1, W1 = np.polynomial.laguerre.laggauss(DEG)
+        K = CC * X1
+        W = CC * np.exp(X1) * W1
+        KK = np.concatenate(([k0], K))
     applychange()
-    printparams()
 
 def setquadrature(quad=QUAD):
     global QUAD, CC, X1, W1, K, W, KK
@@ -91,13 +101,13 @@ def setquadrature(quad=QUAD):
         W = np.concatenate((Wp, Wl))
         KK = np.concatenate(([k0], Kp))
     applychange()
-    printparams()
 
 def applychange():
     global setparams, setquadparams, setquadrature
     setparams = functools.partial(setparams, hbar1=hbar, k01=k0, m1=m)
     setquadparams = functools.partial(setquadparams, deg=DEG, c=CC, deg2=DEG2, r0=R0)
     setquadrature = functools.partial(setquadrature, quad=QUAD)
+    
 #finite legendre quadrature 
 def leg_quad(f, a, b, deg=DEG):
     X, W = np.polynomial.legendre.leggauss(deg)
