@@ -192,7 +192,7 @@ def amplitude_f(V, maxl, isbox=False, r0=0):
 def amplitude_f_2(V, maxl, isbox=False, r0=0):
     Tconj = T_conj(V, maxl, isbox, r0)
     def f(theta):
-        S = 0
+S = 0
         for l in range(maxl+1):
             S += (2*l+1) * Tconj[l][0] * special.legendre(l)(np.cos(theta))
         return -4*Pi**2 *m/(hbar**2) * 1/(2*Pi**2) * S

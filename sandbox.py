@@ -78,21 +78,30 @@ def kkk():
 def degdeg():
     r = np.linspace(0, 10, 10000)
     th = np.linspace(0, np.pi, 10000)
-    V = col.ring(2, 1, 5)
+    V = col.shell(2, 1, 5)
     plt.plot(r, V(r))
     plt.show()
     
     g = an.general(1, 1, 1, V, 10)
     fg = g.amplitude_f(10)
+    sigg = sc.modsq(fg(th))
+    #b = an.box(1, -1)
+    #fan = b.amplitude_f(10)
 
-    plt.plot(th, fg(th), label='pwa')
+    plt.plot(th, sigg, label='pwa')
+    #plt.plot(th, sc.modsq(fan(th)), label='pwa2')
     
-    for deg1 in [20, 30, 40, 50, 60, 80, 100]:
+    for deg1 in [20, 30, 40, 60, 80, 100]:
         sc.setquadparams(deg=deg1)
         f = sc.amplitude_f(V, 10)
-        plt.plot(th, f(th), label=str(deg1))
+        sig = sc.modsq(f(th))
+        err = utils.error(th, sig, sigg)
+        print('deg: {}, error: {}'.format(deg1, err))
+        plt.plot(th, sig, label=str(deg1))
 
     plt.legend()
+    plt.xlabel('theta')
+    plt.ylabel('differential cross section')
     plt.show()
 
 def maxlmaxl():
@@ -113,4 +122,4 @@ def maxlmaxl():
     plt.xlabel('V=ring(2, 1, 5), k=1, deg=40')
     plt.show()
 
-maxlmaxl()
+degdeg()

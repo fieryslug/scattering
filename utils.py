@@ -14,10 +14,8 @@ def plot(a, b, f):
     plt.plot(x, f(x))
     plt.show()
 
-def error(x, f1, f0):
-    dx = (x[-1] - x[0]) / (len(x) - 1)
-    si = 0
-    return np.sqrt(sum(np.abs((f1(x) - f0(x))/f0(x)) ** 2) * dx)
+def error(x, f1x, f0x):
+    return np.sqrt(sum(np.abs(f1x - f0x)**2) / sum(np.abs(f0x)**2))
 
 def maxerror(x, f1, f0):
     return max(np.abs((f1(x)-f0(x))/f0(x))**2)

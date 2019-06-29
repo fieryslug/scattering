@@ -2,7 +2,7 @@ import numpy as np
 
 def yukawa(g, a):
     def V(r):
-        return g * (np.exp(-a*r) / (r))
+        return g * (np.exp(-r/a) / (r))
     return V
 
 def box(V0, r0):
@@ -12,7 +12,7 @@ def box(V0, r0):
 
 def bump(g, a):
     def V(r):
-        return g * np.exp(-(a*r)**2)
+        return g * np.exp(-(r/a)**2)
     return V
 
 def wavelike(g, a, b):
@@ -25,12 +25,12 @@ def wavelike(g, a, b):
 
 def wavelike2(g, a, b):
     def V(r):
-        return g * np.cos(a*r) * np.exp(-(b*r)**2)
+        return g * np.cos(r/b) * np.exp(-(r/a)**2)
     return V
 
-def ring(g, a, c):
-    q = 10
+def shell(g, a, c):
+    b = 0.1
     def V(r):
-        return g * np.tanh(q*r) * np.exp(-((r-c)/a)**2)
+        return g * np.tanh(r/b) * np.exp(-((r-c)/a)**2)
 
     return V
